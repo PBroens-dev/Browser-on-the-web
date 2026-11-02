@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hyperbeam on Vercel</title>
+    <style>
+        body { margin: 0; font-family: Arial, sans-serif; background-color: #121212; color: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; }
+        #browser-container { width: 90%; height: 80vh; border: 2px solid #333; background-color: #000; border-radius: 8px; overflow: hidden; }
+        #loading { font-size: 18px; margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+
+    <div id="loading">Starting virtual computer...</div>
+    <div id="browser-container"></div>
+
+    <script type="module">
+        import Hyperbeam from "https://unpkg.com";
+
+        async function initHyperbeam() {
+            const container = document.getElementById("browser-container");
+            const loadingText = document.getElementById("loading");
+            
+            try {
+                // Request a live embed_url from our Vercel serverless function
+                const res = await fetch('/api/start-session', { method: 'POST' });
+                const data = await res.json();
+                
+                if (!data.embed_url) {
+                    throw new Error(data.error?.message || "No embed_url received");
+                }
+
+                // Initialize the virtual computer
+                await Hyperbeam(container, data.embed_url, {
+                    timeout: 7000,
+                    delegateKeyboard: true,
+                });
+
+                loadingText.innerText = "Virtual computer is active!";
+
+            } catch (error) {
+                loadingText.innerText = "Error loading session: " + error.message;
+                console.error(error);
+            }
+        }
+
+        window.addEventListener("DOMContentLoaded", initHyperbeam);
+    </script>
+</body>
+</html>
