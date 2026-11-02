@@ -1,0 +1,6 @@
+{
+  "rewrites": [
+    { "source": "/api/start-session", "destination": "/api/start-session.js" },
+    { "source": "/(.*)", "destination": "/public/$1" }
+  ]
+}
