@@ -1,19 +1,18 @@
 import fetch from 'node-fetch';
 
 export default async function handler(req, res) {
-    // Only allow POST requests
     if (req.method !== 'POST') {
         return res.status(405).json({ error: 'Method Not Allowed' });
     }
 
-    // Vercel securely injects this variable from your dashboard settings
     const HYPERBEAM_API_KEY = process.env.HYPERBEAM_API_KEY;
 
     if (!HYPERBEAM_API_KEY) {
-        return res.status(500).json({ error: 'Hyperbeam API key is missing from the server configuration.' });
+        return res.status(500).json({ error: 'HYPERBEAM_API_KEY environment variable is missing on Vercel.' });
     }
 
     try {
+        // Updated to the stable Hyperbeam API endpoint
         const response = await fetch('https://hyperbeam.com', {
             method: 'POST',
             headers: {
@@ -21,17 +20,21 @@ export default async function handler(req, res) {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                start_url: "https://google.com", 
-                region: "eu" 
+                start_url: "https://google.com",
+                profile: {
+                    load_default: true
+                }
             })
         });
 
-        if (!response.ok) {
-            const errorData = await response.json();
-            return res.status(response.status).json({ error: errorData });
-        }
-
         const data = await response.json();
+
+        if (!response.ok) {
+            console.error("Hyperbeam API Error Details:", data);
+            return res.status(response.status).json({ 
+                error: data.message || "The Hyperbeam API rejected the request. Check your API key or billing status." 
+            });
+        }
         
         return res.status(200).json({
             embed_url: data.embed_url,
@@ -39,7 +42,7 @@ export default async function handler(req, res) {
         });
 
     } catch (error) {
-        console.error("Serverless error:", error);
-        return res.status(500).json({ error: "Internal server error starting Hyperbeam" });
+        console.error("Vercel Serverless Function Crash:", error);
+        return res.status(500).json({ error: "Failed to connect to Hyperbeam servers: " + error.message });
     }
 }
